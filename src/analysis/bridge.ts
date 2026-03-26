@@ -46,7 +46,7 @@ export function checkBridgeAvailable(pythonPath: string = DK_VENV_PYTHON): boole
   if (!pythonPath) return false;
   try {
     execFileSync(pythonPath, ["-c", "import dnomia_knowledge"], {
-      timeout: 5000,
+      timeout: 15000,
       stdio: ["pipe", "pipe", "pipe"],
     });
     return true;
