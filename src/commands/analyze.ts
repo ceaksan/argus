@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import { getDb } from "../storage/db";
 import { listSearches } from "../storage/queries";
 import { clusterQueries } from "../analysis/cluster";
-import { checkBridgeAvailable, queryBridge } from "../analysis/bridge";
+import { checkBridgeAvailable, queryBridgeBatch } from "../analysis/bridge";
 import { computeGaps, computeMissedConnections, computeContentSignals, computeSessionEfficiency } from "../analysis/signals";
 import { formatAnalysisReport, formatJson, parseSince } from "../utils/format";
 import type { AnalysisReport, BridgeResult } from "../analysis/types";
@@ -58,10 +58,8 @@ export function registerAnalyzeCommand(program: Command): void {
       if (!opts.skipSemantic && signalFilter !== "efficiency" && signalFilter !== "content") {
         bridgeAvailable = checkBridgeAvailable();
         if (bridgeAvailable) {
-          for (const cluster of clusters) {
-            const result = queryBridge(cluster.representative);
-            bridgeResults.push(result);
-          }
+          const clusterQueries = clusters.map((c) => c.representative);
+          bridgeResults = queryBridgeBatch(clusterQueries);
         }
       }
 

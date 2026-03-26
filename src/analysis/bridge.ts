@@ -1,7 +1,8 @@
 import { execFileSync } from "child_process";
 import type { BridgeMatch, BridgeResult } from "./types";
 
-const PYTHON_SEARCH_SCRIPT = `
+// Batch script: reads JSON array of queries from stdin, loads model once, returns results for all
+const PYTHON_BATCH_SCRIPT = `
 import json, sys
 try:
     from dnomia_knowledge.embedder import Embedder
@@ -12,12 +13,15 @@ try:
     store = Store(db)
     embedder = Embedder()
     search = HybridSearch(store, embedder)
-    results = search.search(query=sys.argv[1], limit=5)
-    out = [{"file_path": r.file_path, "project_id": r.project_id, "score": r.score, "snippet": r.snippet[:200]} for r in results]
-    print(json.dumps(out))
+    queries = json.loads(sys.stdin.read())
+    results = {}
+    for q in queries:
+        hits = search.search(query=q, limit=5)
+        results[q] = [{"file_path": r.file_path, "project_id": r.project_id, "score": r.score, "snippet": r.snippet[:200]} for r in hits]
+    print(json.dumps(results))
     store.close()
 except Exception as e:
-    print(json.dumps([]))
+    print(json.dumps({}))
 `;
 
 const DK_VENV_PYTHON = process.env.DNOMIA_KNOWLEDGE_PYTHON
@@ -55,15 +59,40 @@ export function queryBridge(
   query: string,
   pythonPath: string = DK_VENV_PYTHON,
 ): BridgeResult {
+  const results = queryBridgeBatch([query], pythonPath);
+  return results[0] || { query, matches: [], available: false };
+}
+
+export function queryBridgeBatch(
+  queries: string[],
+  pythonPath: string = DK_VENV_PYTHON,
+): BridgeResult[] {
   try {
-    const stdout = execFileSync(pythonPath, ["-c", PYTHON_SEARCH_SCRIPT, query], {
-      timeout: 30000,
+    const input = JSON.stringify(queries);
+    const stdout = execFileSync(pythonPath, ["-c", PYTHON_BATCH_SCRIPT], {
+      timeout: 120000,
+      input,
       stdio: ["pipe", "pipe", "pipe"],
       encoding: "utf-8",
     });
-    const matches = parseBridgeOutput(stdout);
-    return { query, matches, available: true };
+
+    const parsed = JSON.parse(stdout.trim());
+    if (typeof parsed !== "object" || parsed === null) {
+      return queries.map((q) => ({ query: q, matches: [], available: false }));
+    }
+
+    return queries.map((q) => {
+      const hits = parsed[q];
+      if (!Array.isArray(hits)) return { query: q, matches: [], available: true };
+      const matches: BridgeMatch[] = hits.map((item: any) => ({
+        filePath: item.file_path || "",
+        projectId: item.project_id || "",
+        score: typeof item.score === "number" ? item.score : 0,
+        snippet: item.snippet || "",
+      }));
+      return { query: q, matches, available: true };
+    });
   } catch {
-    return { query, matches: [], available: false };
+    return queries.map((q) => ({ query: q, matches: [], available: false }));
   }
 }
