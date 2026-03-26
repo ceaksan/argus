@@ -1,0 +1,87 @@
+import Table from "cli-table3";
+import chalk from "chalk";
+import type { SearchRecord, StatsResult } from "../storage/queries";
+
+export function formatSearchTable(records: SearchRecord[]): string {
+  if (records.length === 0) return chalk.yellow("No searches found.");
+
+  const table = new Table({
+    head: [
+      chalk.cyan("Time"),
+      chalk.cyan("Type"),
+      chalk.cyan("Query"),
+      chalk.cyan("Project"),
+      chalk.cyan("Status"),
+    ],
+    colWidths: [22, 8, 50, 30, 10],
+    wordWrap: true,
+  });
+
+  for (const record of records) {
+    const time = record.timestamp.replace("T", " ").substring(0, 19);
+    const type = record.type === "search" ? chalk.green("search") : chalk.blue("fetch");
+    const query =
+      record.query.length > 48 ? record.query.substring(0, 45) + "..." : record.query;
+    const project = record.project_dir
+      ? record.project_dir.split("/").pop() || record.project_dir
+      : "-";
+    const status = record.results ? chalk.green("done") : chalk.yellow("pending");
+
+    table.push([time, type, query, project, status]);
+  }
+
+  return table.toString();
+}
+
+export function formatStatsOutput(stats: StatsResult): string {
+  const lines: string[] = [];
+
+  lines.push(chalk.bold("Search Statistics"));
+  lines.push(`Total: ${chalk.cyan(stats.total)} (${chalk.green(stats.searches)} searches, ${chalk.blue(stats.fetches)} fetches)`);
+  lines.push("");
+
+  if (stats.topQueries.length > 0) {
+    lines.push(chalk.bold("Top Queries:"));
+    for (const q of stats.topQueries) {
+      lines.push(`  ${chalk.cyan(q.count)}x  ${q.query}`);
+    }
+    lines.push("");
+  }
+
+  if (stats.byProject.length > 0) {
+    lines.push(chalk.bold("By Project:"));
+    for (const p of stats.byProject) {
+      const name = p.project_dir ? p.project_dir.split("/").pop() || p.project_dir : "unknown";
+      lines.push(`  ${chalk.cyan(p.count)}  ${name}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+export function formatJson(data: unknown): string {
+  return JSON.stringify(data, null, 2);
+}
+
+export function parseSince(since: string): string {
+  const match = since.match(/^(\d+)([dhm])$/);
+  if (!match) throw new Error(`Invalid --since format: ${since}. Use Nd, Nh, or Nm (e.g., 7d, 24h, 30m)`);
+
+  const amount = parseInt(match[1], 10);
+  const unit = match[2];
+  const now = new Date();
+
+  switch (unit) {
+    case "d":
+      now.setDate(now.getDate() - amount);
+      break;
+    case "h":
+      now.setHours(now.getHours() - amount);
+      break;
+    case "m":
+      now.setMinutes(now.getMinutes() - amount);
+      break;
+  }
+
+  return now.toISOString();
+}
