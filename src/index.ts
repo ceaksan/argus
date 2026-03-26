@@ -6,6 +6,7 @@ import { registerStatsCommand } from "./commands/stats";
 import { registerSearchCommand } from "./commands/search";
 import { registerExportCommand } from "./commands/export";
 import { registerHookCommand } from "./commands/hook";
+import { registerAnalyzeCommand } from "./commands/analyze";
 import { handlePreToolUse } from "./hooks/pre-tool-use";
 import { handlePostToolUse } from "./hooks/post-tool-use";
 import { getDb, closeDb } from "./storage/db";
@@ -63,5 +64,6 @@ registerStatsCommand(program);
 registerSearchCommand(program);
 registerExportCommand(program);
 registerHookCommand(program);
+registerAnalyzeCommand(program);
 
 program.parse();
