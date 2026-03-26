@@ -42,11 +42,17 @@ src/
   hooks/
     pre-tool-use.ts     Parses PreToolUse stdin, inserts search record
     post-tool-use.ts    Parses PostToolUse stdin, updates record with results
+  analysis/
+    types.ts            Shared interfaces for analysis
+    cluster.ts          Query clustering via Jaccard similarity
+    bridge.ts           dnomia-knowledge subprocess bridge
+    signals.ts          4 signal types: gap, missed, content, efficiency
   commands/
     log.ts              hermes log (list with filters)
     stats.ts            hermes stats (aggregations)
     search.ts           hermes search <keyword>
     export.ts           hermes export --format json|csv
+    analyze.ts          hermes analyze (pattern analysis)
     hook.ts             hermes hook install|uninstall|status
   utils/
     format.ts           Table rendering, JSON output, --since parser
@@ -56,6 +62,30 @@ tests/
   hooks/
     pre-tool-use.test.ts   PreToolUse handler tests (3 tests)
     post-tool-use.test.ts  PostToolUse handler tests (3 tests)
+```
+
+### Analysis Module
+
+| File | Purpose |
+|------|---------|
+| `src/analysis/types.ts` | Shared interfaces for analysis |
+| `src/analysis/cluster.ts` | Query clustering via Jaccard similarity |
+| `src/analysis/bridge.ts` | dnomia-knowledge subprocess bridge |
+| `src/analysis/signals.ts` | 4 signal types: gap, missed, content, efficiency |
+| `src/commands/analyze.ts` | CLI command orchestration |
+
+#### Analysis Data Flow
+
+```
+Hermes SQLite → listSearches(filters)
+     ↓
+Query Clustering (Jaccard, threshold 0.6)
+     ↓
+dnomia-knowledge Bridge (subprocess, per cluster)
+     ↓
+Signal Computation (4 types)
+     ↓
+Report (terminal or JSON)
 ```
 
 ## Data Flow

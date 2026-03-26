@@ -67,6 +67,38 @@ hermes export --format csv        # CSV for spreadsheets
 hermes export --format csv --since 7d
 ```
 
+### `hermes analyze`
+
+Analyze search patterns against your local knowledge base.
+
+```bash
+# Default: last 7 days
+hermes analyze
+
+# Filter by time range
+hermes analyze --since 30d
+
+# Filter by project
+hermes analyze --project /path/to/project
+
+# Specific signal only
+hermes analyze --signal gaps|missed|content|efficiency
+
+# Skip dnomia-knowledge bridge (fast, local only)
+hermes analyze --skip-semantic
+
+# JSON output
+hermes analyze --json
+```
+
+**Signals:**
+- **Knowledge Gaps**: Topics Claude searched but your knowledge base doesn't cover
+- **Missed Connections**: Knowledge exists locally but Claude searched externally anyway
+- **Content Signals**: Repeated search clusters that suggest content opportunities
+- **Session Efficiency**: Per-session metrics on search depth, repeats, and focus
+
+**Requirements:** For gap and missed connection analysis, [dnomia-knowledge](https://github.com/ceaksan/dnomia-knowledge) must be installed. Without it, only content signals and efficiency are reported.
+
 ### Hook management
 
 ```bash
