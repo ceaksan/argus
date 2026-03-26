@@ -2,9 +2,11 @@
 
 Log and analyze web searches made by AI coding assistants.
 
+![License: ISC](https://img.shields.io/badge/license-ISC-blue) ![Node >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+
 ## Why
 
-AI coding assistants (Claude Code, Cursor, Copilot) make web searches during conversations, but those searches are invisible to you. You have no record of what was searched, what results came back, or how search patterns evolve across sessions and projects.
+AI coding assistants make web searches during conversations, but those searches are invisible to you. You have no record of what was searched, what results came back, or how search patterns evolve across sessions and projects.
 
 Hermes captures every web search and fetch, stores them locally, and gives you CLI tools to query, analyze, and export your AI assistant's search history.
 
@@ -20,20 +22,16 @@ Hermes captures every web search and fetch, stores them locally, and gives you C
 ## Quick Start
 
 ```bash
-# Clone and build
 git clone https://github.com/ceaksan/hermes.git
 cd hermes
 npm install
 npm run build
-
-# Make the CLI available globally
 npm link
 
-# Install hooks into Claude Code
 hermes hook install
 ```
 
-That's it. Every WebSearch and WebFetch in Claude Code is now logged automatically.
+Every WebSearch and WebFetch in Claude Code is now logged automatically.
 
 ## Usage
 
@@ -48,7 +46,7 @@ hermes log --project .            # Current project only
 hermes log --json                 # JSON output
 ```
 
-### Search statistics
+### Statistics
 
 ```bash
 hermes stats                      # Total counts, top queries, by project
@@ -66,7 +64,7 @@ hermes search "react hooks"       # Find past searches matching a keyword
 ```bash
 hermes export --format json       # Full JSON export
 hermes export --format csv        # CSV for spreadsheets
-hermes export --format json --since 7d
+hermes export --format csv --since 7d
 ```
 
 ### Hook management
@@ -82,40 +80,24 @@ hermes hook uninstall             # Remove hooks
 ```
 Claude Code calls WebSearch/WebFetch
          |
-  PreToolUse hook fires --> hermes capture pre --> INSERT (query, no results yet)
+  PreToolUse hook --> hermes capture pre --> INSERT (query, no results yet)
          |
   Tool executes, returns results
          |
-  PostToolUse hook fires --> hermes capture post --> UPDATE (add results)
+  PostToolUse hook --> hermes capture post --> UPDATE (add results)
          |
   Later: hermes log/stats/search --> READ from SQLite
 ```
 
-Hermes registers two hooks in Claude Code's `~/.claude/settings.json`. When Claude Code makes a web search or fetches a URL, the hooks pipe the tool's input and output to `hermes capture`, which writes to a local SQLite database. The hooks are non-blocking: if Hermes fails, Claude Code continues unaffected.
+Hermes registers two hooks in `~/.claude/settings.json`. When Claude Code makes a web search or fetches a URL, the hooks pipe the tool's input and output to `hermes capture`, which writes to a local SQLite database. Hooks are non-blocking: if Hermes fails, Claude Code continues unaffected.
 
 Pre and Post hooks are correlated using Claude Code's `tool_use_id`, a unique identifier for each tool invocation.
 
-## Configuration
-
-No configuration files or environment variables needed. Everything is stored locally:
-
-| Item | Location |
-|------|----------|
-| Hooks | `~/.claude/settings.json` |
-| Database | `<hermes-dir>/data/hermes.db` |
-
 ## Limitations
 
-- **Claude Code only** (v0.1): Other AI assistants (Gemini CLI, Cursor, Copilot) don't expose hook systems yet. The architecture supports multiple assistants, but only Claude Code works today.
-- **No conversation context**: The `trigger_text` field (what user question caused the search) is not yet populated. Claude Code hooks don't include the user's message in the hook payload.
-- **Local only**: No sync, no cloud, no team features. This is a personal tool.
-
-## Roadmap
-
-- [ ] Web dashboard (`hermes serve`)
-- [ ] PostgreSQL support for team/multi-user scenarios
-- [ ] Gemini CLI support (when hooks become available)
-- [ ] Conversation context extraction (trigger_text population)
+- **Claude Code only**: Other AI assistants don't expose hook systems yet. The data model supports multiple assistants, but only Claude Code works today.
+- **No conversation context**: What user question triggered a search is not yet captured. Claude Code hooks don't include the user's message in the payload.
+- **Local only**: No sync, no cloud, no team features.
 
 ## Development
 
@@ -123,7 +105,7 @@ No configuration files or environment variables needed. Everything is stored loc
 npm install           # Install dependencies
 npm run dev           # Run with tsx (no build needed)
 npm run build         # Compile TypeScript
-npm test              # Run tests
+npm test              # Run tests (12 tests)
 npm run test:watch    # Watch mode
 ```
 
@@ -133,4 +115,4 @@ See [architecture.md](architecture.md) for system design, data model, and module
 
 ## License
 
-ISC
+[ISC](LICENSE)
