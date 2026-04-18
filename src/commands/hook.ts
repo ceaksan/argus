@@ -9,17 +9,17 @@ const SETTINGS_PATH = path.join(
   "settings.json",
 );
 
-const HERMES_HOOKS = {
+const ARGUS_HOOKS = {
   PreToolUse: [
     {
       matcher: "WebSearch|WebFetch",
-      hooks: [{ type: "command", command: "hermes capture pre" }],
+      hooks: [{ type: "command", command: "argus capture pre" }],
     },
   ],
   PostToolUse: [
     {
       matcher: "WebSearch|WebFetch",
-      hooks: [{ type: "command", command: "hermes capture post" }],
+      hooks: [{ type: "command", command: "argus capture post" }],
     },
   ],
 };
@@ -39,19 +39,19 @@ export function registerHookCommand(program: Command): void {
 
   hook
     .command("install")
-    .description("Install Hermes hooks into Claude Code settings")
+    .description("Install Argus hooks into Claude Code settings")
     .action(() => {
       const settings = readSettings();
       if (!settings.hooks) settings.hooks = {};
 
-      for (const [event, hookConfigs] of Object.entries(HERMES_HOOKS)) {
+      for (const [event, hookConfigs] of Object.entries(ARGUS_HOOKS)) {
         if (!settings.hooks[event]) settings.hooks[event] = [];
 
         const existing = settings.hooks[event] as any[];
         const alreadyInstalled = existing.some(
           (h: any) =>
             h.matcher === "WebSearch|WebFetch" &&
-            h.hooks?.some((hh: any) => hh.command?.startsWith("hermes capture")),
+            h.hooks?.some((hh: any) => hh.command?.startsWith("argus capture")),
         );
 
         if (!alreadyInstalled) {
@@ -60,13 +60,13 @@ export function registerHookCommand(program: Command): void {
       }
 
       writeSettings(settings);
-      console.log(chalk.green("Hermes hooks installed in Claude Code settings."));
+      console.log(chalk.green("Argus hooks installed in Claude Code settings."));
       console.log(`Settings: ${SETTINGS_PATH}`);
     });
 
   hook
     .command("uninstall")
-    .description("Remove Hermes hooks from Claude Code settings")
+    .description("Remove Argus hooks from Claude Code settings")
     .action(() => {
       const settings = readSettings();
       if (!settings.hooks) {
@@ -80,7 +80,7 @@ export function registerHookCommand(program: Command): void {
           (h: any) =>
             !(
               h.matcher === "WebSearch|WebFetch" &&
-              h.hooks?.some((hh: any) => hh.command?.startsWith("hermes capture"))
+              h.hooks?.some((hh: any) => hh.command?.startsWith("argus capture"))
             ),
         );
         if (settings.hooks[event].length === 0) delete settings.hooks[event];
@@ -89,12 +89,12 @@ export function registerHookCommand(program: Command): void {
       if (Object.keys(settings.hooks).length === 0) delete settings.hooks;
 
       writeSettings(settings);
-      console.log(chalk.green("Hermes hooks removed from Claude Code settings."));
+      console.log(chalk.green("Argus hooks removed from Claude Code settings."));
     });
 
   hook
     .command("status")
-    .description("Check if Hermes hooks are installed")
+    .description("Check if Argus hooks are installed")
     .action(() => {
       const settings = readSettings();
       const hooks = settings.hooks || {};
@@ -102,19 +102,19 @@ export function registerHookCommand(program: Command): void {
       const preInstalled = (hooks.PreToolUse || []).some(
         (h: any) =>
           h.matcher === "WebSearch|WebFetch" &&
-          h.hooks?.some((hh: any) => hh.command?.startsWith("hermes capture")),
+          h.hooks?.some((hh: any) => hh.command?.startsWith("argus capture")),
       );
       const postInstalled = (hooks.PostToolUse || []).some(
         (h: any) =>
           h.matcher === "WebSearch|WebFetch" &&
-          h.hooks?.some((hh: any) => hh.command?.startsWith("hermes capture")),
+          h.hooks?.some((hh: any) => hh.command?.startsWith("argus capture")),
       );
 
       console.log(`PreToolUse:  ${preInstalled ? chalk.green("installed") : chalk.red("not installed")}`);
       console.log(`PostToolUse: ${postInstalled ? chalk.green("installed") : chalk.red("not installed")}`);
 
       if (!preInstalled || !postInstalled) {
-        console.log(`\nRun ${chalk.cyan("hermes hook install")} to set up hooks.`);
+        console.log(`\nRun ${chalk.cyan("argus hook install")} to set up hooks.`);
       }
     });
 }

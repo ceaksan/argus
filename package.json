@@ -1,10 +1,10 @@
 {
-  "name": "hermes",
+  "name": "argus",
   "version": "0.1.0",
   "description": "AI CLI search logger",
   "main": "dist/index.js",
   "bin": {
-    "hermes": "dist/index.js"
+    "argus": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",

@@ -90,7 +90,7 @@ export function parseSince(since: string): string {
 export function formatAnalysisReport(report: AnalysisReport): string {
   const lines: string[] = [];
 
-  lines.push(chalk.bold("═══ Hermes Analysis Report ═══"));
+  lines.push(chalk.bold("═══ Argus Analysis Report ═══"));
   lines.push(
     `Period: ${report.period.from} - ${report.period.to} | ` +
     `Queries: ${chalk.cyan(report.totalQueries)} | ` +

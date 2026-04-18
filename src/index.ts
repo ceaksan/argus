@@ -14,7 +14,7 @@ import { getDb, closeDb } from "./storage/db";
 const program = new Command();
 
 program
-  .name("hermes")
+  .name("argus")
   .description("AI CLI search logger")
   .version("0.1.0");
 

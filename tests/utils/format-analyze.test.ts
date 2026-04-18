@@ -41,7 +41,7 @@ describe("formatAnalysisReport", () => {
     };
 
     const output = formatAnalysisReport(report);
-    expect(output).toContain("Hermes Analysis Report");
+    expect(output).toContain("Argus Analysis Report");
     expect(output).toContain("Knowledge Gaps");
     expect(output).toContain("v8 snapshot startup");
     expect(output).toContain("Missed Connections");

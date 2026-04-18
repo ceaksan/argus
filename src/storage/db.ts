@@ -4,7 +4,7 @@ import fs from "fs";
 import { runMigrations } from "./schema";
 
 const DATA_DIR = path.join(__dirname, "..", "..", "data");
-const DB_PATH = path.join(DATA_DIR, "hermes.db");
+const DB_PATH = path.join(DATA_DIR, "argus.db");
 
 let _db: Database.Database | null = null;
 

@@ -1,4 +1,4 @@
-# Hermes - Architecture
+# Argus - Architecture
 
 CLI tool that logs web searches made by AI coding assistants via hook systems, stores them in SQLite, and provides analysis commands.
 
@@ -26,7 +26,7 @@ Last verified: 2026-03-26
 
 | Layer | Technology | Detail |
 |-------|-----------|--------|
-| Storage | SQLite (WAL mode) | Local file at `data/hermes.db` |
+| Storage | SQLite (WAL mode) | Local file at `data/argus.db` |
 | Distribution | npm link / npx | Global CLI binary |
 | Hook Integration | Claude Code hooks | PreToolUse + PostToolUse events |
 
@@ -48,12 +48,12 @@ src/
     bridge.ts           dnomia-knowledge subprocess bridge
     signals.ts          4 signal types: gap, missed, content, efficiency
   commands/
-    log.ts              hermes log (list with filters)
-    stats.ts            hermes stats (aggregations)
-    search.ts           hermes search <keyword>
-    export.ts           hermes export --format json|csv
-    analyze.ts          hermes analyze (pattern analysis)
-    hook.ts             hermes hook install|uninstall|status
+    log.ts              argus log (list with filters)
+    stats.ts            argus stats (aggregations)
+    search.ts           argus search <keyword>
+    export.ts           argus export --format json|csv
+    analyze.ts          argus analyze (pattern analysis)
+    hook.ts             argus hook install|uninstall|status
   utils/
     format.ts           Table rendering, JSON output, --since parser
 tests/
@@ -77,7 +77,7 @@ tests/
 #### Analysis Data Flow
 
 ```
-Hermes SQLite → listSearches(filters)
+Argus SQLite → listSearches(filters)
      ↓
 Query Clustering (Jaccard, threshold 0.6)
      ↓
@@ -109,7 +109,7 @@ stdin JSON    stdin JSON
 (tool_input)  (tool_input + tool_response)
     |             |
     v             v
-hermes        hermes
+argus        argus
 capture pre   capture post
     |             |
     v             v
@@ -120,7 +120,7 @@ searches      with results
     +------+------+
            |
        SQLite DB
-      (data/hermes.db)
+      (data/argus.db)
 ```
 
 ### Query Flow
@@ -128,10 +128,10 @@ searches      with results
 ```
 User runs CLI command
     |
-    +-- hermes log -----> listSearches() --> formatSearchTable()
-    +-- hermes stats ---> getStats() ------> formatStatsOutput()
-    +-- hermes search --> searchInLogs() --> formatSearchTable()
-    +-- hermes export --> listSearches() --> JSON or CSV to stdout
+    +-- argus log -----> listSearches() --> formatSearchTable()
+    +-- argus stats ---> getStats() ------> formatStatsOutput()
+    +-- argus search --> searchInLogs() --> formatSearchTable()
+    +-- argus export --> listSearches() --> JSON or CSV to stdout
 ```
 
 ## Data Model
@@ -157,7 +157,7 @@ Indexes: timestamp, assistant, type, project_dir, tool_use_id (unique)
 | Item | Location | Purpose |
 |------|----------|---------|
 | Hook config | `~/.claude/settings.json` | PreToolUse/PostToolUse hook entries |
-| Database | `<project>/data/hermes.db` | SQLite storage (gitignored) |
+| Database | `<project>/data/argus.db` | SQLite storage (gitignored) |
 | CLI binary | `dist/index.js` | Compiled entry point |
 
 No environment variables required. No secrets.

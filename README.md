@@ -1,4 +1,4 @@
-# Hermes
+# Argus
 
 Log and analyze web searches made by AI coding assistants.
 
@@ -8,7 +8,7 @@ Log and analyze web searches made by AI coding assistants.
 
 AI coding assistants make web searches during conversations, but those searches are invisible to you. You have no record of what was searched, what results came back, or how search patterns evolve across sessions and projects.
 
-Hermes captures every web search and fetch, stores them locally, and gives you CLI tools to query, analyze, and export your AI assistant's search history.
+Argus captures every web search and fetch, stores them locally, and gives you CLI tools to query, analyze, and export your AI assistant's search history.
 
 ## What
 
@@ -22,13 +22,13 @@ Hermes captures every web search and fetch, stores them locally, and gives you C
 ## Quick Start
 
 ```bash
-git clone https://github.com/ceaksan/hermes.git
-cd hermes
+git clone https://github.com/ceaksan/argus.git
+cd argus
 npm install
 npm run build
 npm link
 
-hermes hook install
+argus hook install
 ```
 
 Every WebSearch and WebFetch in Claude Code is now logged automatically.
@@ -38,57 +38,57 @@ Every WebSearch and WebFetch in Claude Code is now logged automatically.
 ### View recent searches
 
 ```bash
-hermes log                        # Last 20 searches
-hermes log --limit 50             # More results
-hermes log --type search          # Only web searches (no fetches)
-hermes log --since 7d             # Last 7 days
-hermes log --project .            # Current project only
-hermes log --json                 # JSON output
+argus log                        # Last 20 searches
+argus log --limit 50             # More results
+argus log --type search          # Only web searches (no fetches)
+argus log --since 7d             # Last 7 days
+argus log --project .            # Current project only
+argus log --json                 # JSON output
 ```
 
 ### Statistics
 
 ```bash
-hermes stats                      # Total counts, top queries, by project
-hermes stats --since 30d          # Last 30 days
+argus stats                      # Total counts, top queries, by project
+argus stats --since 30d          # Last 30 days
 ```
 
 ### Search within logs
 
 ```bash
-hermes search "react hooks"       # Find past searches matching a keyword
+argus search "react hooks"       # Find past searches matching a keyword
 ```
 
 ### Export
 
 ```bash
-hermes export --format json       # Full JSON export
-hermes export --format csv        # CSV for spreadsheets
-hermes export --format csv --since 7d
+argus export --format json       # Full JSON export
+argus export --format csv        # CSV for spreadsheets
+argus export --format csv --since 7d
 ```
 
-### `hermes analyze`
+### `argus analyze`
 
 Analyze search patterns against your local knowledge base.
 
 ```bash
 # Default: last 7 days
-hermes analyze
+argus analyze
 
 # Filter by time range
-hermes analyze --since 30d
+argus analyze --since 30d
 
 # Filter by project
-hermes analyze --project /path/to/project
+argus analyze --project /path/to/project
 
 # Specific signal only
-hermes analyze --signal gaps|missed|content|efficiency
+argus analyze --signal gaps|missed|content|efficiency
 
 # Skip dnomia-knowledge bridge (fast, local only)
-hermes analyze --skip-semantic
+argus analyze --skip-semantic
 
 # JSON output
-hermes analyze --json
+argus analyze --json
 ```
 
 **Signals:**
@@ -102,9 +102,9 @@ hermes analyze --json
 ### Hook management
 
 ```bash
-hermes hook status                # Check if hooks are active
-hermes hook install               # Install hooks
-hermes hook uninstall             # Remove hooks
+argus hook status                # Check if hooks are active
+argus hook install               # Install hooks
+argus hook uninstall             # Remove hooks
 ```
 
 ## How It Works
@@ -112,16 +112,16 @@ hermes hook uninstall             # Remove hooks
 ```
 Claude Code calls WebSearch/WebFetch
          |
-  PreToolUse hook --> hermes capture pre --> INSERT (query, no results yet)
+  PreToolUse hook --> argus capture pre --> INSERT (query, no results yet)
          |
   Tool executes, returns results
          |
-  PostToolUse hook --> hermes capture post --> UPDATE (add results)
+  PostToolUse hook --> argus capture post --> UPDATE (add results)
          |
-  Later: hermes log/stats/search --> READ from SQLite
+  Later: argus log/stats/search --> READ from SQLite
 ```
 
-Hermes registers two hooks in `~/.claude/settings.json`. When Claude Code makes a web search or fetches a URL, the hooks pipe the tool's input and output to `hermes capture`, which writes to a local SQLite database. Hooks are non-blocking: if Hermes fails, Claude Code continues unaffected.
+Argus registers two hooks in `~/.claude/settings.json`. When Claude Code makes a web search or fetches a URL, the hooks pipe the tool's input and output to `argus capture`, which writes to a local SQLite database. Hooks are non-blocking: if Argus fails, Claude Code continues unaffected.
 
 Pre and Post hooks are correlated using Claude Code's `tool_use_id`, a unique identifier for each tool invocation.
 
