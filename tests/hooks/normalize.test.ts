@@ -72,6 +72,40 @@ describe("normalize", () => {
     });
   });
 
+  describe("OpenCode payload", () => {
+    it("normalizes websearch pre with callID and camelCase", () => {
+      const raw = {
+        tool: "websearch",
+        sessionID: "oc-s1",
+        callID: "call-oc-1",
+        messageID: "msg-1",
+        args: { query: "typescript plugin api" },
+      };
+      const n = normalize(raw, "pre");
+      expect(n).toMatchObject({
+        type: "search",
+        query: "typescript plugin api",
+        toolUseId: "call-oc-1",
+        sessionId: "oc-s1",
+      });
+    });
+
+    it("normalizes webfetch post with output field", () => {
+      const raw = {
+        tool: "webfetch",
+        sessionID: "oc-s1",
+        callID: "call-oc-2",
+        messageID: "msg-2",
+        args: { url: "https://z.com" },
+        output: "page content",
+      };
+      const n = normalize(raw, "post");
+      expect(n?.type).toBe("fetch");
+      expect(n?.query).toBe("https://z.com");
+      expect(n?.results).toBe("page content");
+    });
+  });
+
   describe("rejection", () => {
     it("ignores unrelated tools", () => {
       const raw = { tool_name: "Bash", tool_input: { command: "ls" } };
