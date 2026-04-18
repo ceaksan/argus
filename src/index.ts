@@ -24,7 +24,8 @@ const capture = program.command("capture", { hidden: true }).description("Captur
 capture
   .command("pre")
   .description("Handle PreToolUse hook")
-  .action(async () => {
+  .option("--assistant <name>", "Assistant identifier (claude-code, kimi-code)", "claude-code")
+  .action(async (opts) => {
     const chunks: Buffer[] = [];
     for await (const chunk of process.stdin) {
       chunks.push(chunk);
@@ -32,10 +33,9 @@ capture
     const stdinData = Buffer.concat(chunks).toString("utf-8");
     try {
       const db = getDb();
-      handlePreToolUse(stdinData, db);
+      handlePreToolUse(stdinData, db, opts.assistant);
       closeDb();
     } catch (err) {
-      // Silent failure - never block Claude Code
       process.exit(0);
     }
   });
@@ -43,7 +43,8 @@ capture
 capture
   .command("post")
   .description("Handle PostToolUse hook")
-  .action(async () => {
+  .option("--assistant <name>", "Assistant identifier (claude-code, kimi-code)", "claude-code")
+  .action(async (opts) => {
     const chunks: Buffer[] = [];
     for await (const chunk of process.stdin) {
       chunks.push(chunk);
@@ -51,10 +52,9 @@ capture
     const stdinData = Buffer.concat(chunks).toString("utf-8");
     try {
       const db = getDb();
-      handlePostToolUse(stdinData, db);
+      handlePostToolUse(stdinData, db, opts.assistant);
       closeDb();
     } catch (err) {
-      // Silent failure - never block Claude Code
       process.exit(0);
     }
   });
