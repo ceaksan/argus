@@ -36,7 +36,7 @@ export const ArgusPlugin = async (ctx) => {
         sessionID: input.sessionID ?? "",
         callID: input.callID ?? "",
         messageID: input.messageID ?? "",
-        args: output?.args ?? {},
+        args: input.args ?? output?.args ?? {},
       };
       await pipeToArgus("pre", payload);
     },
@@ -47,7 +47,7 @@ export const ArgusPlugin = async (ctx) => {
         sessionID: input.sessionID ?? "",
         callID: input.callID ?? "",
         messageID: input.messageID ?? "",
-        args: output?.args ?? {},
+        args: input.args ?? output?.args ?? {},
         output: output?.output ?? output?.result ?? null,
       };
       await pipeToArgus("post", payload);
