@@ -102,24 +102,23 @@ argus analyze --json
 ### Hook management
 
 ```bash
-argus hook status                # Check hook install state (Claude + Kimi)
-argus hook install               # Install into both Claude Code and Kimi CLI
-argus hook install --claude      # Only Claude Code (~/.claude/settings.json)
-argus hook install --kimi        # Only Kimi CLI (~/.kimi/config.toml)
-argus hook uninstall             # Remove from both (same --claude / --kimi flags)
+argus hook status                # Check install state across all assistants
+argus hook install               # Install into every supported assistant
+argus hook install --claude      # Only Claude Code
+argus hook install --kimi        # Only Kimi CLI
+argus hook install --opencode    # Only OpenCode
+argus hook uninstall             # Same flags supported
 ```
 
 ### Supported assistants
 
-| Assistant | Tool names | Config | Install |
+| Assistant | Tool names | Config | Mechanism |
 |---|---|---|---|
-| Claude Code | `WebSearch`, `WebFetch` | `~/.claude/settings.json` | `argus hook install --claude` |
-| Kimi CLI | `SearchWeb`, `FetchURL` | `~/.kimi/config.toml` | `argus hook install --kimi` |
-| OpenCode | `websearch`, `webfetch` | JS plugin (see below) | manual, see `plugins/opencode-argus.js` |
+| Claude Code | `WebSearch`, `WebFetch` | `~/.claude/settings.json` | Shell hook |
+| Kimi CLI | `SearchWeb`, `FetchURL` | `~/.kimi/config.toml` | Shell hook |
+| OpenCode | `websearch`, `webfetch` | `~/.config/opencode/plugins/` | JS plugin (symlinked from `plugins/opencode-argus.js`) |
 
-### OpenCode plugin (manual install)
-
-OpenCode uses a JavaScript plugin model instead of shell hooks. Copy or symlink `plugins/opencode-argus.js` into your OpenCode plugin directory. The plugin shells out to the `argus` binary — make sure it is on your PATH.
+The OpenCode plugin shells out to the `argus` binary, so make sure it is on your PATH (e.g. via `npm link` from the repo).
 
 ## How It Works
 

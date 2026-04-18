@@ -6,6 +6,8 @@ import TOML from "@iarna/toml";
 
 const CLAUDE_SETTINGS = path.join(process.env.HOME || "", ".claude", "settings.json");
 const KIMI_CONFIG = path.join(process.env.HOME || "", ".kimi", "config.toml");
+const OPENCODE_PLUGIN_DIR = path.join(process.env.HOME || "", ".config", "opencode", "plugins");
+const OPENCODE_PLUGIN_NAME = "opencode-argus.js";
 
 const CLAUDE_HOOKS = {
   PreToolUse: [
@@ -147,11 +149,55 @@ function kimiStatus(): { pre: boolean; post: boolean } {
   };
 }
 
-type Target = "all" | "claude" | "kimi";
+function pluginSourcePath(): string {
+  // dist/commands/hook.js -> repo root -> plugins/
+  return path.resolve(__dirname, "..", "..", "plugins", OPENCODE_PLUGIN_NAME);
+}
 
-function resolveTarget(opts: { claude?: boolean; kimi?: boolean }): Target {
-  if (opts.claude && !opts.kimi) return "claude";
-  if (opts.kimi && !opts.claude) return "kimi";
+function installOpenCode(): void {
+  const src = pluginSourcePath();
+  if (!fs.existsSync(src)) {
+    console.log(chalk.red(`Plugin source not found at ${src}`));
+    return;
+  }
+  fs.mkdirSync(OPENCODE_PLUGIN_DIR, { recursive: true });
+  const dest = path.join(OPENCODE_PLUGIN_DIR, OPENCODE_PLUGIN_NAME);
+  if (fs.existsSync(dest) || fs.lstatSync(dest).isSymbolicLink?.()) {
+    try { fs.unlinkSync(dest); } catch {}
+  }
+  fs.symlinkSync(src, dest);
+  console.log(chalk.green("OpenCode plugin installed."));
+  console.log(`  ${dest} -> ${src}`);
+}
+
+function uninstallOpenCode(): void {
+  const dest = path.join(OPENCODE_PLUGIN_DIR, OPENCODE_PLUGIN_NAME);
+  if (fs.existsSync(dest) || fs.lstatSync(dest).isSymbolicLink?.()) {
+    try { fs.unlinkSync(dest); } catch {}
+    console.log(chalk.green("OpenCode plugin removed."));
+  } else {
+    console.log(chalk.yellow("OpenCode plugin not installed."));
+  }
+}
+
+function opencodeStatus(): { installed: boolean } {
+  const dest = path.join(OPENCODE_PLUGIN_DIR, OPENCODE_PLUGIN_NAME);
+  try {
+    return { installed: fs.existsSync(dest) || fs.lstatSync(dest).isSymbolicLink() };
+  } catch {
+    return { installed: false };
+  }
+}
+
+type Target = "all" | "claude" | "kimi" | "opencode";
+
+function resolveTarget(opts: { claude?: boolean; kimi?: boolean; opencode?: boolean }): Target {
+  const flags = [opts.claude, opts.kimi, opts.opencode].filter(Boolean).length;
+  if (flags === 1) {
+    if (opts.claude) return "claude";
+    if (opts.kimi) return "kimi";
+    if (opts.opencode) return "opencode";
+  }
   return "all";
 }
 
@@ -161,23 +207,27 @@ export function registerHookCommand(program: Command): void {
   hook
     .command("install")
     .description("Install Argus hooks into assistant configs")
-    .option("--claude", "Install only Claude Code hooks")
-    .option("--kimi", "Install only Kimi CLI hooks")
+    .option("--claude", "Only Claude Code")
+    .option("--kimi", "Only Kimi CLI")
+    .option("--opencode", "Only OpenCode")
     .action((opts) => {
       const target = resolveTarget(opts);
       if (target === "all" || target === "claude") installClaude();
       if (target === "all" || target === "kimi") installKimi();
+      if (target === "all" || target === "opencode") installOpenCode();
     });
 
   hook
     .command("uninstall")
     .description("Remove Argus hooks from assistant configs")
-    .option("--claude", "Remove only Claude Code hooks")
-    .option("--kimi", "Remove only Kimi CLI hooks")
+    .option("--claude", "Only Claude Code")
+    .option("--kimi", "Only Kimi CLI")
+    .option("--opencode", "Only OpenCode")
     .action((opts) => {
       const target = resolveTarget(opts);
       if (target === "all" || target === "claude") uninstallClaude();
       if (target === "all" || target === "kimi") uninstallKimi();
+      if (target === "all" || target === "opencode") uninstallOpenCode();
     });
 
   hook
@@ -186,6 +236,7 @@ export function registerHookCommand(program: Command): void {
     .action(() => {
       const c = claudeStatus();
       const k = kimiStatus();
+      const o = opencodeStatus();
       const fmt = (ok: boolean) => (ok ? chalk.green("installed") : chalk.red("not installed"));
       console.log(chalk.bold("Claude Code"));
       console.log(`  PreToolUse:  ${fmt(c.pre)}`);
@@ -193,7 +244,9 @@ export function registerHookCommand(program: Command): void {
       console.log(chalk.bold("\nKimi CLI"));
       console.log(`  PreToolUse:  ${fmt(k.pre)}`);
       console.log(`  PostToolUse: ${fmt(k.post)}`);
-      if (!c.pre || !c.post || !k.pre || !k.post) {
+      console.log(chalk.bold("\nOpenCode"));
+      console.log(`  Plugin:      ${fmt(o.installed)}`);
+      if (!c.pre || !c.post || !k.pre || !k.post || !o.installed) {
         console.log(`\nRun ${chalk.cyan("argus hook install")} to set up hooks.`);
       }
     });
