@@ -5,10 +5,7 @@ import {
   computeContentSignals,
   computeSessionEfficiency,
 } from "../../src/analysis/signals";
-import type {
-  QueryCluster,
-  BridgeResult,
-} from "../../src/analysis/types";
+import type { QueryCluster, BridgeResult } from "../../src/analysis/types";
 
 type TestRecord = {
   session_id: string;
@@ -19,7 +16,12 @@ type TestRecord = {
 describe("computeGaps", () => {
   it("marks queries with no bridge matches as gaps", () => {
     const clusters: QueryCluster[] = [
-      { representative: "v8 snapshot startup", queries: ["v8 snapshot startup"], sessions: new Set(["s1"]), count: 1 },
+      {
+        representative: "v8 snapshot startup",
+        queries: ["v8 snapshot startup"],
+        sessions: new Set(["s1"]),
+        count: 1,
+      },
     ];
     const bridgeResults: BridgeResult[] = [
       { query: "v8 snapshot startup", matches: [], available: true },
@@ -33,12 +35,19 @@ describe("computeGaps", () => {
 
   it("marks queries with low scores as gaps", () => {
     const clusters: QueryCluster[] = [
-      { representative: "map memory footprint", queries: ["map memory footprint"], sessions: new Set(["s1"]), count: 1 },
+      {
+        representative: "map memory footprint",
+        queries: ["map memory footprint"],
+        sessions: new Set(["s1"]),
+        count: 1,
+      },
     ];
     const bridgeResults: BridgeResult[] = [
       {
         query: "map memory footprint",
-        matches: [{ filePath: "/f.md", projectId: "p", score: 0.12, snippet: "" }],
+        matches: [
+          { filePath: "/f.md", projectId: "p", score: 0.12, snippet: "" },
+        ],
         available: true,
       },
     ];
@@ -50,12 +59,19 @@ describe("computeGaps", () => {
 
   it("does not include high-score matches as gaps", () => {
     const clusters: QueryCluster[] = [
-      { representative: "astro routing", queries: ["astro routing"], sessions: new Set(["s1"]), count: 1 },
+      {
+        representative: "astro routing",
+        queries: ["astro routing"],
+        sessions: new Set(["s1"]),
+        count: 1,
+      },
     ];
     const bridgeResults: BridgeResult[] = [
       {
         query: "astro routing",
-        matches: [{ filePath: "/f.md", projectId: "p", score: 0.85, snippet: "" }],
+        matches: [
+          { filePath: "/f.md", projectId: "p", score: 0.85, snippet: "" },
+        ],
         available: true,
       },
     ];
@@ -68,12 +84,24 @@ describe("computeGaps", () => {
 describe("computeMissedConnections", () => {
   it("returns high-score matches as missed connections", () => {
     const clusters: QueryCluster[] = [
-      { representative: "astro aliases", queries: ["astro aliases"], sessions: new Set(["s1"]), count: 1 },
+      {
+        representative: "astro aliases",
+        queries: ["astro aliases"],
+        sessions: new Set(["s1"]),
+        count: 1,
+      },
     ];
     const bridgeResults: BridgeResult[] = [
       {
         query: "astro aliases",
-        matches: [{ filePath: "/docs/routing.md", projectId: "ceaksan-v4.0", score: 0.82, snippet: "Aliases" }],
+        matches: [
+          {
+            filePath: "/docs/routing.md",
+            projectId: "ceaksan-v4.0",
+            score: 0.82,
+            snippet: "Aliases",
+          },
+        ],
         available: true,
       },
     ];
@@ -85,12 +113,19 @@ describe("computeMissedConnections", () => {
 
   it("ignores low-score matches", () => {
     const clusters: QueryCluster[] = [
-      { representative: "react hooks", queries: ["react hooks"], sessions: new Set(["s1"]), count: 1 },
+      {
+        representative: "react hooks",
+        queries: ["react hooks"],
+        sessions: new Set(["s1"]),
+        count: 1,
+      },
     ];
     const bridgeResults: BridgeResult[] = [
       {
         query: "react hooks",
-        matches: [{ filePath: "/f.md", projectId: "p", score: 0.25, snippet: "" }],
+        matches: [
+          { filePath: "/f.md", projectId: "p", score: 0.25, snippet: "" },
+        ],
         available: true,
       },
     ];
@@ -117,10 +152,26 @@ describe("computeContentSignals", () => {
 
     const records: TestRecord[] = [
       { session_id: "s1", type: "search", query: "astro middleware redirect" },
-      { session_id: "s1", type: "search", query: "astro cloudflare workers redirect" },
-      { session_id: "s1", type: "fetch", query: "https://docs.astro.build/routing" },
-      { session_id: "s1", type: "fetch", query: "https://docs.astro.build/routing" },
-      { session_id: "s1", type: "search", query: "astro cloudflare adapter redirect" },
+      {
+        session_id: "s1",
+        type: "search",
+        query: "astro cloudflare workers redirect",
+      },
+      {
+        session_id: "s1",
+        type: "fetch",
+        query: "https://docs.astro.build/routing",
+      },
+      {
+        session_id: "s1",
+        type: "fetch",
+        query: "https://docs.astro.build/routing",
+      },
+      {
+        session_id: "s1",
+        type: "search",
+        query: "astro cloudflare adapter redirect",
+      },
     ];
 
     const signals = computeContentSignals(clusters, records);
@@ -129,9 +180,52 @@ describe("computeContentSignals", () => {
     expect(signals[0].repeatedFetches).toBeGreaterThan(0);
   });
 
+  it("scopes repeatedFetches per cluster, not globally", () => {
+    const clusters: QueryCluster[] = [
+      {
+        representative: "topic a",
+        queries: ["a1", "a2", "a3"],
+        sessions: new Set(["sa"]),
+        count: 3,
+      },
+      {
+        representative: "topic b",
+        queries: ["b1", "b2", "b3"],
+        sessions: new Set(["sb"]),
+        count: 3,
+      },
+    ];
+
+    const records: TestRecord[] = [
+      // session sa: one duplicate fetch
+      { session_id: "sa", type: "search", query: "a1" },
+      { session_id: "sa", type: "search", query: "a2" },
+      { session_id: "sa", type: "search", query: "a3" },
+      { session_id: "sa", type: "fetch", query: "https://x/a" },
+      { session_id: "sa", type: "fetch", query: "https://x/a" },
+      // session sb: no duplicate fetches
+      { session_id: "sb", type: "search", query: "b1" },
+      { session_id: "sb", type: "search", query: "b2" },
+      { session_id: "sb", type: "search", query: "b3" },
+      { session_id: "sb", type: "fetch", query: "https://x/b1" },
+      { session_id: "sb", type: "fetch", query: "https://x/b2" },
+    ];
+
+    const signals = computeContentSignals(clusters, records);
+    const a = signals.find((s) => s.topic === "topic a");
+    const b = signals.find((s) => s.topic === "topic b");
+    expect(a?.repeatedFetches).toBe(1);
+    expect(b?.repeatedFetches).toBe(0);
+  });
+
   it("skips clusters with fewer than 3 queries", () => {
     const clusters: QueryCluster[] = [
-      { representative: "react hooks", queries: ["react hooks", "react custom hooks"], sessions: new Set(["s1"]), count: 2 },
+      {
+        representative: "react hooks",
+        queries: ["react hooks", "react custom hooks"],
+        sessions: new Set(["s1"]),
+        count: 2,
+      },
     ];
 
     const signals = computeContentSignals(clusters, []);

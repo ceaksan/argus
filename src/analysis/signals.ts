@@ -73,23 +73,20 @@ export function computeContentSignals(
 ): ContentSignal[] {
   const signals: ContentSignal[] = [];
 
-  // Count fetch duplicates across all records
-  const fetchCounts = new Map<string, number>();
+  // Group fetch URLs by session so repeats can be scoped per cluster
+  const sessionFetches = new Map<string, string[]>();
   for (const r of records) {
     if (r.type === "fetch") {
-      fetchCounts.set(r.query, (fetchCounts.get(r.query) || 0) + 1);
+      const list = sessionFetches.get(r.session_id) || [];
+      list.push(r.query);
+      sessionFetches.set(r.session_id, list);
     }
-  }
-
-  let totalRepeatedFetches = 0;
-  for (const count of fetchCounts.values()) {
-    if (count > 1) totalRepeatedFetches += count - 1;
   }
 
   for (const cluster of clusters) {
     if (cluster.count < CONTENT_CLUSTER_MIN) continue;
 
-    // Count unique sessions for this cluster's queries
+    // Sessions in which this cluster's queries appeared
     const clusterSessions = new Set<string>();
     for (const r of records) {
       if (cluster.queries.includes(r.query)) {
@@ -97,11 +94,19 @@ export function computeContentSignals(
       }
     }
 
+    // Repeated fetches scoped to this cluster's sessions (redundant re-fetches
+    // of the same URL while researching this topic)
+    let repeatedFetches = 0;
+    for (const sessionId of clusterSessions) {
+      const urls = sessionFetches.get(sessionId) || [];
+      repeatedFetches += urls.length - new Set(urls).size;
+    }
+
     signals.push({
       topic: cluster.representative,
       queries: cluster.queries,
       uniqueAngles: cluster.count,
-      repeatedFetches: totalRepeatedFetches,
+      repeatedFetches,
       sessionCount: clusterSessions.size || cluster.sessions.size,
     });
   }
@@ -128,12 +133,16 @@ export function computeSessionEfficiency(
     const totalQueries = recs.length;
 
     // Count repeated search queries
-    const searchQueries = recs.filter((r) => r.type === "search").map((r) => r.query);
+    const searchQueries = recs
+      .filter((r) => r.type === "search")
+      .map((r) => r.query);
     const uniqueSearches = new Set(searchQueries);
     const repeatCount = searchQueries.length - uniqueSearches.size;
 
     // Count repeated fetch URLs
-    const fetchUrls = recs.filter((r) => r.type === "fetch").map((r) => r.query);
+    const fetchUrls = recs
+      .filter((r) => r.type === "fetch")
+      .map((r) => r.query);
     const uniqueFetches = new Set(fetchUrls);
     const duplicateFetches = fetchUrls.length - uniqueFetches.size;
 
@@ -142,7 +151,8 @@ export function computeSessionEfficiency(
     const fetchRepeatRatio = fetchCount > 0 ? duplicateFetches / fetchCount : 0;
     const depthPenalty = Math.min(1, uniqueSearches.size / 20);
 
-    const rawScore = 1 - (repeatRatio * 0.4 + fetchRepeatRatio * 0.3 + depthPenalty * 0.3);
+    const rawScore =
+      1 - (repeatRatio * 0.4 + fetchRepeatRatio * 0.3 + depthPenalty * 0.3);
     const score = Math.round(Math.max(0, Math.min(100, rawScore * 100)));
 
     results.push({

@@ -3,7 +3,12 @@ import { getDb } from "../storage/db";
 import { listSearches } from "../storage/queries";
 import { clusterQueries } from "../analysis/cluster";
 import { checkBridgeAvailable, queryBridgeBatch } from "../analysis/bridge";
-import { computeGaps, computeMissedConnections, computeContentSignals, computeSessionEfficiency } from "../analysis/signals";
+import {
+  computeGaps,
+  computeMissedConnections,
+  computeContentSignals,
+  computeSessionEfficiency,
+} from "../analysis/signals";
 import { formatAnalysisReport, formatJson, parseSince } from "../utils/format";
 import type { AnalysisReport, BridgeResult } from "../analysis/types";
 
@@ -15,8 +20,15 @@ export function registerAnalyzeCommand(program: Command): void {
     .description("Analyze search patterns and knowledge gaps")
     .option("-s, --since <duration>", "Time range (e.g., 7d, 30d)", "7d")
     .option("-p, --project <dir>", "Filter by project directory")
-    .option("--signal <type>", "Show specific signal (gaps|missed|content|efficiency)")
-    .option("--skip-semantic", "Skip dnomia-knowledge bridge (fast, local only)")
+    .option("-a, --assistant <name>", "Filter by assistant (e.g., claude-code)")
+    .option(
+      "--signal <type>",
+      "Show specific signal (gaps|missed|content|efficiency)",
+    )
+    .option(
+      "--skip-semantic",
+      "Skip dnomia-knowledge bridge (fast, local only)",
+    )
     .option("--json", "Output as JSON")
     .action(async (opts) => {
       const db = getDb();
@@ -26,6 +38,7 @@ export function registerAnalyzeCommand(program: Command): void {
       const records = listSearches(db, {
         limit: 10000,
         project: opts.project === "." ? process.cwd() : opts.project,
+        assistant: opts.assistant,
         since,
       });
 
@@ -55,7 +68,11 @@ export function registerAnalyzeCommand(program: Command): void {
       let bridgeResults: BridgeResult[] = [];
       const signalFilter = opts.signal as SignalFilter | undefined;
 
-      if (!opts.skipSemantic && signalFilter !== "efficiency" && signalFilter !== "content") {
+      if (
+        !opts.skipSemantic &&
+        signalFilter !== "efficiency" &&
+        signalFilter !== "content"
+      ) {
         bridgeAvailable = checkBridgeAvailable();
         if (bridgeAvailable) {
           const clusterQueries = clusters.map((c) => c.representative);
@@ -71,12 +88,25 @@ export function registerAnalyzeCommand(program: Command): void {
       }));
 
       const gaps = bridgeAvailable ? computeGaps(clusters, bridgeResults) : [];
-      const missed = bridgeAvailable ? computeMissedConnections(clusters, bridgeResults) : [];
+      const missed = bridgeAvailable
+        ? computeMissedConnections(clusters, bridgeResults)
+        : [];
       const contentSignals = computeContentSignals(clusters, minimalRecords);
       const efficiency = computeSessionEfficiency(minimalRecords);
 
       // 5. Build report
       const timestamps = records.map((r) => r.timestamp).sort();
+      const assistantCounts = new Map<string, number>();
+      for (const r of records) {
+        assistantCounts.set(
+          r.assistant,
+          (assistantCounts.get(r.assistant) || 0) + 1,
+        );
+      }
+      const byAssistant = [...assistantCounts.entries()]
+        .map(([assistant, count]) => ({ assistant, count }))
+        .sort((a, b) => b.count - a.count);
+
       const report: AnalysisReport = {
         period: {
           from: timestamps[0].substring(0, 10),
@@ -84,11 +114,14 @@ export function registerAnalyzeCommand(program: Command): void {
         },
         totalQueries: records.length,
         totalSessions: new Set(records.map((r) => r.session_id)).size,
+        byAssistant,
         bridgeAvailable,
         gaps: !signalFilter || signalFilter === "gaps" ? gaps : [],
         missed: !signalFilter || signalFilter === "missed" ? missed : [],
-        contentSignals: !signalFilter || signalFilter === "content" ? contentSignals : [],
-        efficiency: !signalFilter || signalFilter === "efficiency" ? efficiency : [],
+        contentSignals:
+          !signalFilter || signalFilter === "content" ? contentSignals : [],
+        efficiency:
+          !signalFilter || signalFilter === "efficiency" ? efficiency : [],
       };
 
       // 6. Output

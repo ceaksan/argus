@@ -8,14 +8,21 @@ describe("formatAnalysisReport", () => {
       period: { from: "2026-03-20", to: "2026-03-26" },
       totalQueries: 46,
       totalSessions: 2,
-      bridgeAvailable: true,
-      gaps: [
-        { query: "v8 snapshot startup", clusterSize: 1, bestScore: 0 },
+      byAssistant: [
+        { assistant: "claude-code", count: 40 },
+        { assistant: "kimi-code", count: 6 },
       ],
+      bridgeAvailable: true,
+      gaps: [{ query: "v8 snapshot startup", clusterSize: 1, bestScore: 0 }],
       missed: [
         {
           query: "astro aliases",
-          match: { filePath: "/docs/routing.md", projectId: "ceaksan-v4.0", score: 0.82, snippet: "Aliases" },
+          match: {
+            filePath: "/docs/routing.md",
+            projectId: "ceaksan-v4.0",
+            score: 0.82,
+            snippet: "Aliases",
+          },
         },
       ],
       contentSignals: [
@@ -50,6 +57,8 @@ describe("formatAnalysisReport", () => {
     expect(output).toContain("astro cloudflare redirect");
     expect(output).toContain("Session Efficiency");
     expect(output).toContain("62%");
+    expect(output).toContain("Assistants:");
+    expect(output).toContain("claude-code");
   });
 
   it("shows warning when bridge is unavailable", () => {
@@ -57,12 +66,21 @@ describe("formatAnalysisReport", () => {
       period: { from: "2026-03-20", to: "2026-03-26" },
       totalQueries: 5,
       totalSessions: 1,
+      byAssistant: [{ assistant: "claude-code", count: 5 }],
       bridgeAvailable: false,
       gaps: [],
       missed: [],
       contentSignals: [],
       efficiency: [
-        { sessionId: "s1", totalQueries: 5, searchCount: 3, fetchCount: 2, repeatCount: 0, duplicateFetches: 0, score: 90 },
+        {
+          sessionId: "s1",
+          totalQueries: 5,
+          searchCount: 3,
+          fetchCount: 2,
+          repeatCount: 0,
+          duplicateFetches: 0,
+          score: 90,
+        },
       ],
     };
 
@@ -77,12 +95,21 @@ describe("formatAnalysisReport", () => {
       period: { from: "2026-03-20", to: "2026-03-26" },
       totalQueries: 2,
       totalSessions: 1,
+      byAssistant: [{ assistant: "claude-code", count: 2 }],
       bridgeAvailable: true,
       gaps: [],
       missed: [],
       contentSignals: [],
       efficiency: [
-        { sessionId: "s1", totalQueries: 2, searchCount: 1, fetchCount: 1, repeatCount: 0, duplicateFetches: 0, score: 95 },
+        {
+          sessionId: "s1",
+          totalQueries: 2,
+          searchCount: 1,
+          fetchCount: 1,
+          repeatCount: 0,
+          duplicateFetches: 0,
+          score: 95,
+        },
       ],
     };
 

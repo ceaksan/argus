@@ -53,6 +53,7 @@ export interface AnalysisReport {
   period: { from: string; to: string };
   totalQueries: number;
   totalSessions: number;
+  byAssistant: Array<{ assistant: string; count: number }>;
   gaps: KnowledgeGap[];
   missed: MissedConnection[];
   contentSignals: ContentSignal[];
